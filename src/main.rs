@@ -58,15 +58,17 @@ impl HashCollections {
         };
 
         // 3 uvs, 2 vers, 1 quat
-        let starter = [1.,1.,0.,0.];
+        let starter = [1., 1., 0., 0.];
         h.data.extend_from_slice(&starter);
 
         h.map.insert(HashItem::Quat(starter), 0);
-        h.map.insert(HashItem::Vert([starter[0],starter[1],starter[2]]), 0);
-        h.map.insert(HashItem::Vert([starter[1],starter[2],starter[3]]), 1);
-        h.map.insert(HashItem::Uv__([starter[0],starter[1]]), 0);
-        h.map.insert(HashItem::Uv__([starter[1],starter[2]]), 1);
-        h.map.insert(HashItem::Uv__([starter[2],starter[3]]), 2);
+        h.map
+            .insert(HashItem::Vert([starter[0], starter[1], starter[2]]), 0);
+        h.map
+            .insert(HashItem::Vert([starter[1], starter[2], starter[3]]), 1);
+        h.map.insert(HashItem::Uv__([starter[0], starter[1]]), 0);
+        h.map.insert(HashItem::Uv__([starter[1], starter[2]]), 1);
+        h.map.insert(HashItem::Uv__([starter[2], starter[3]]), 2);
 
         eprintln!("data: {:?}", h.data);
         eprintln!("_map: {:?}", h.map);
@@ -82,124 +84,106 @@ impl HashCollections {
         let len = self.data.len();
         let mut payload = self.data[(len - 3)..len].to_vec();
 
-
         // it's not in there, lets append and return the slice
         let iterations = match sequence {
             HashItem::Uv__(arr) => {
                 self.data.extend_from_slice(&arr);
                 payload.extend_from_slice(&arr);
                 2
-            },
+            }
             HashItem::Vert(arr) => {
                 self.data.extend_from_slice(&arr);
                 payload.extend_from_slice(&arr);
                 3
-            },
+            }
             HashItem::Quat(arr) => {
                 self.data.extend_from_slice(&arr);
                 payload.extend_from_slice(&arr);
                 4
-            },
+            }
         };
 
         let plen = payload.len();
         for i in 0..iterations {
-            let tmp_quat = HashItem::Quat([payload[plen - i - 4],payload[plen - i - 3],payload[plen - i - 2],payload[plen - i - 1]]);
-            if let None = self.map.get(&tmp_quat) {
+            let tmp_quat = HashItem::Quat([
+                payload[plen - i - 4],
+                payload[plen - i - 3],
+                payload[plen - i - 2],
+                payload[plen - i - 1],
+            ]);
+            if self.map.get(&tmp_quat).is_none() {
                 self.map.insert(tmp_quat, self.data.len() - 4);
             }
-            let tmp_vert = HashItem::Vert([payload[plen - i - 3],payload[plen - i - 2],payload[plen - i - 1]]);
-            if let None = self.map.get(&tmp_vert) {
+            let tmp_vert = HashItem::Vert([
+                payload[plen - i - 3],
+                payload[plen - i - 2],
+                payload[plen - i - 1],
+            ]);
+            if self.map.get(&tmp_vert).is_none() {
                 self.map.insert(tmp_vert, self.data.len() - 3);
             }
-            let tmp_uv__ = HashItem::Uv__([payload[plen - i - 2],payload[plen - i - 1]]);
-            if let None = self.map.get(&tmp_uv__) {
+            let tmp_uv__ = HashItem::Uv__([payload[plen - i - 2], payload[plen - i - 1]]);
+            if self.map.get(&tmp_uv__).is_none() {
                 self.map.insert(tmp_uv__, self.data.len() - 2);
             }
-
-            self.print_collection();
         }
 
         len
     }
 
-    fn print_collection(&self) {
-        eprintln!("data: {:?}", self.data);
+    fn print_data(&self) {
+        eprintln!("data[{}]: {:?}", self.data.len(), self.data);
+    }
+
+    fn print_map(&self) {
         eprintln!("_map: {:?}", self.map);
-    }
-
-    fn add_vert(&mut self, vert: [f32; 3]) -> usize {
-        self.add_sequence(HashItem::Vert(vert))
-    }
-
-    fn add_uv(&mut self, uv: [f32; 2]) -> usize {
-        self.add_sequence(HashItem::Uv__(uv))
-    }
-
-    fn add_quat(&mut self, quat: [f32; 4]) -> usize {
-        self.add_sequence(HashItem::Quat(quat))
-    }
-
-    fn get_vert(&self, index: usize) -> Option<[f32; 3]> {
-        if index + 3 <= self.data.len() {
-            Some([self.data[index], self.data[index + 1], self.data[index + 2]])
-        } else {
-            None
-        }
-    }
-
-    fn get_uv(&self, index: usize) -> Option<[f32; 2]> {
-        if index + 2 <= self.data.len() {
-            Some([self.data[index], self.data[index + 1]])
-        } else {
-            None
-        }
-    }
-
-    fn get_quat(&self, index: usize) -> Option<[f32; 4]> {
-        if index + 4 <= self.data.len() {
-            Some([
-                self.data[index],
-                self.data[index + 1],
-                self.data[index + 2],
-                self.data[index + 3],
-            ])
-        } else {
-            None
-        }
     }
 }
 
 fn main() {
     let mut collections = HashCollections::new();
 
+    let mut indices = vec![];
     let quat = [1.0, 2.0, 3.0, 4.0];
     let vert = [1.0, 2.0, 3.0];
     let uv = [2.0, 3.0];
 
-    let quat_index = collections.add_quat(quat);
-    let vert_index = collections.add_vert(vert);
-    let uv_index = collections.add_uv(uv);
+    indices.push(collections.add_sequence(HashItem::Quat(quat)));
+    indices.push(collections.add_sequence(HashItem::Vert(vert)));
+    indices.push(collections.add_sequence(HashItem::Uv__(uv)));
 
-    println!("Quat index: {}", quat_index);
-    println!("Vert index: {}", vert_index);
-    println!("UV index: {}", uv_index);
+    indices.push(collections.add_sequence(HashItem::Quat(quat)));
+    indices.push(collections.add_sequence(HashItem::Vert([0., 0., 1.])));
+    indices.push(collections.add_sequence(HashItem::Uv__([0., 1.])));
 
-    let quat_index = collections.add_quat(quat);
-    let vert_index = collections.add_vert([0.,0.,1.]);
-    let uv_index = collections.add_uv([0.,1.]);
-
-    println!("Quat index: {}", quat_index);
-    println!("Vert index: {}", vert_index);
-    println!("UV__ index: {}", uv_index);
-
-
-    // println!("Quat at index {}: {:?}", quat_index, collections.get_quat(quat_index));
-    // println!("Quat at index {}: {:?}", quat_index, collections.get_quat(4));
-    // println!("Vert at index {}: {:?}", vert_index, collections.get_vert(5));
-    for i in 0..7 {
-        println!("UV at index {}: {:?}", i, collections.get_uv(i));
+    /*
+    let mut rng = rand::thread_rng();
+    for _ in 0..300_000 {
+        let hash_type: u8 = rng.gen_range(0..3);
+        match hash_type {
+            0 => {
+                let f1: u16 = rng.gen_range(0..10000);
+                let f2: u16 = rng.gen_range(0..10000);
+                indices.push(collections.add_sequence(HashItem::Uv__([f1 as f32, f2 as f32])));
+            },
+            1 => {
+                let f1: u16 = rng.gen_range(0..10000);
+                let f2: u16 = rng.gen_range(0..10000);
+                let f3: u16 = rng.gen_range(0..10000);
+                indices.push(collections.add_sequence(HashItem::Vert([f1 as f32, f2 as f32, f3 as f32])));
+            },
+            2 => {
+                let f1: u16 = rng.gen_range(0..10000);
+                let f2: u16 = rng.gen_range(0..10000);
+                let f3: u16 = rng.gen_range(0..10000);
+                let f4: u16 = rng.gen_range(0..10000);
+                indices.push(collections.add_sequence(HashItem::Quat([f1 as f32, f2 as f32, f3 as f32, f4 as f32])));
+            },
+            _ => panic!("bad hash type")
+        }
     }
+    */
 
-    collections.print_collection();
+    eprintln!("indices[{}]: {:?}", indices.len(), indices);
+    collections.print_data();
 }
