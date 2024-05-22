@@ -50,6 +50,13 @@ struct HashCollections {
     map: HashMap<HashItem, usize>,
 }
 
+#[derive(Debug)]
+enum IndexType {
+    Uv__(usize),
+    Vert(usize),
+    Quat(usize),
+}
+
 impl HashCollections {
     fn new() -> Self {
         let mut h = HashCollections {
@@ -76,9 +83,13 @@ impl HashCollections {
         h
     }
 
-    fn add_sequence(&mut self, sequence: HashItem) -> usize {
+    fn add_sequence(&mut self, sequence: HashItem) -> IndexType {
         if let Some(&index) = self.map.get(&sequence) {
-            return index;
+            return match sequence {
+                HashItem::Uv__(_) => IndexType::Uv__(index),
+                HashItem::Vert(_) => IndexType::Vert(index),
+                HashItem::Quat(_) => IndexType::Quat(index),
+            };
         }
 
         let len = self.data.len();
@@ -112,7 +123,7 @@ impl HashCollections {
                 payload[plen - i - 1],
             ]);
             if self.map.get(&tmp_quat).is_none() {
-                self.map.insert(tmp_quat, self.data.len() - 4);
+                self.map.insert(tmp_quat, self.data.len() - i - 4);
             }
             let tmp_vert = HashItem::Vert([
                 payload[plen - i - 3],
@@ -120,15 +131,19 @@ impl HashCollections {
                 payload[plen - i - 1],
             ]);
             if self.map.get(&tmp_vert).is_none() {
-                self.map.insert(tmp_vert, self.data.len() - 3);
+                self.map.insert(tmp_vert, self.data.len() - i - 3);
             }
             let tmp_uv__ = HashItem::Uv__([payload[plen - i - 2], payload[plen - i - 1]]);
             if self.map.get(&tmp_uv__).is_none() {
-                self.map.insert(tmp_uv__, self.data.len() - 2);
+                self.map.insert(tmp_uv__, self.data.len() - i - 2);
             }
         }
 
-        len
+        match sequence {
+            HashItem::Uv__(_) => IndexType::Uv__(len),
+            HashItem::Vert(_) => IndexType::Vert(len),
+            HashItem::Quat(_) => IndexType::Quat(len),
+        }
     }
 
     fn print_data(&self) {
@@ -148,6 +163,7 @@ fn main() {
     let vert = [1.0, 2.0, 3.0];
     let uv = [2.0, 3.0];
 
+    /*
     indices.push(collections.add_sequence(HashItem::Quat(quat)));
     indices.push(collections.add_sequence(HashItem::Vert(vert)));
     indices.push(collections.add_sequence(HashItem::Uv__(uv)));
@@ -156,34 +172,41 @@ fn main() {
     indices.push(collections.add_sequence(HashItem::Vert([0., 0., 1.])));
     indices.push(collections.add_sequence(HashItem::Uv__([0., 1.])));
 
-    /*
+    indices.push(collections.add_sequence(HashItem::Quat([0.,0.,1.,2.])));
+    indices.push(collections.add_sequence(HashItem::Quat([3.,4.,4.,4.])));
+    indices.push(collections.add_sequence(HashItem::Vert([4., 4., 4.])));
+    indices.push(collections.add_sequence(HashItem::Uv__([4., 4.])));
+    */
+
+    use rand::prelude::*;
+
     let mut rng = rand::thread_rng();
     for _ in 0..300_000 {
         let hash_type: u8 = rng.gen_range(0..3);
         match hash_type {
             0 => {
-                let f1: u16 = rng.gen_range(0..10000);
-                let f2: u16 = rng.gen_range(0..10000);
+                let f1: u8 = rng.gen();
+                let f2: u8 = f1;
                 indices.push(collections.add_sequence(HashItem::Uv__([f1 as f32, f2 as f32])));
             },
             1 => {
-                let f1: u16 = rng.gen_range(0..10000);
-                let f2: u16 = rng.gen_range(0..10000);
-                let f3: u16 = rng.gen_range(0..10000);
+                let f1: u8 = rng.gen();
+                let f2: u8 = f1;
+                let f3: u8 = rng.gen();
                 indices.push(collections.add_sequence(HashItem::Vert([f1 as f32, f2 as f32, f3 as f32])));
             },
             2 => {
-                let f1: u16 = rng.gen_range(0..10000);
-                let f2: u16 = rng.gen_range(0..10000);
-                let f3: u16 = rng.gen_range(0..10000);
-                let f4: u16 = rng.gen_range(0..10000);
+                let f1: u8 = rng.gen();
+                let f2: u8 = f1;
+                let f3: u8 = rng.gen();
+                let f4: u8 = f3;
                 indices.push(collections.add_sequence(HashItem::Quat([f1 as f32, f2 as f32, f3 as f32, f4 as f32])));
             },
             _ => panic!("bad hash type")
         }
     }
-    */
 
-    eprintln!("indices[{}]: {:?}", indices.len(), indices);
+    eprintln!("===================");
     collections.print_data();
+    eprintln!("indices[{}]: {:?}", indices.len(), indices);
 }

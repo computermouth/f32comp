@@ -1,0 +1,42 @@
+
+### 300000 hashables (~900000 f32s)
+
+# RAW DATA
+# ======================
+
+- HIT RATE: 0
+- FLOAT SIZE: 3.6MB
+- INDEX SIZE: 0.0MB
+- TOTAL SIZE: 3.6MB
+
+# POOR HIT RATE
+# ======================
+
+- HIT RATE: 1/256^3
+- FLOAT SIZE: 2.8MB
+- INDEX SIZE: 1.2MB
+- TOTAL SIZE: 4.0MB
+
+# MEDIUM HIT RATE
+# ======================
+
+- HIT RATE: 1/256^2
+- FLOAT SIZE: 0.9MB
+- INDEX SIZE: 1.2MB
+- TOTAL SIZE: 2.1MB
+
+# HIGH HIT RATE
+# ======================
+
+- HIT RATE: 1/(256*128)
+- FLOAT SIZE: 0.6MB
+- INDEX SIZE: 1.2MB
+- TOTAL SIZE: 1.8MB
+
+# INSANE HIT RATE
+# ======================
+
+- HIT RATE: 1/256
+- FLOAT SIZE: 0.006MB
+- INDEX SIZE: 1.200MB
+- TOTAL SIZE: 1.206MB
