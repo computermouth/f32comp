@@ -65,7 +65,9 @@ impl HashCollections {
         };
 
         // 3 uvs, 2 vers, 1 quat
-        let starter = [1., 1., 0., 0.];
+        // assuming there's one unit cube in there somewhere,
+        // these will be made useful
+        let starter = [-0.5, 0.5, 0.5, -0.5];
         h.data.extend_from_slice(&starter);
 
         h.map.insert(HashItem::Quat(starter), 0);
@@ -98,19 +100,49 @@ impl HashCollections {
         // it's not in there, lets append and return the slice
         let iterations = match sequence {
             HashItem::Uv__(arr) => {
-                self.data.extend_from_slice(&arr);
-                payload.extend_from_slice(&arr);
-                2
+                let plen = payload.len();
+                // [-1a, 1b]
+                let one_new = [payload[plen - 1], arr[1]];
+                let iter = match &arr {
+                    _ if arr == one_new => 1,
+                    _ => 2,
+                };
+                self.data.extend_from_slice(&arr[arr.len()-iter..]);
+                payload.extend_from_slice(&arr[arr.len()-iter..]);
+                iter
             }
             HashItem::Vert(arr) => {
-                self.data.extend_from_slice(&arr);
-                payload.extend_from_slice(&arr);
-                3
+                let plen = payload.len();
+                // [-1a, 1b, 2b]
+                let two_new = [payload[plen - 1], arr[1], arr[2]];
+                // [-2a, -1a, 2b]
+                let one_new = [payload[plen - 2], payload[plen - 1], arr[2]];
+                let iter = match &arr {
+                    _ if arr == one_new => 1,
+                    _ if arr == two_new => 2,
+                    _ => 3,
+                };
+                self.data.extend_from_slice(&arr[arr.len()-iter..]);
+                payload.extend_from_slice(&arr[arr.len()-iter..]);
+                iter
             }
             HashItem::Quat(arr) => {
-                self.data.extend_from_slice(&arr);
-                payload.extend_from_slice(&arr);
-                4
+                let plen = payload.len();
+                // [-1a, 1b, 2b, 3b]
+                let thr_new = [payload[plen - 1], arr[1], arr[2], arr[3]];
+                // [-2a, -1a, 2b, 3b]
+                let two_new = [payload[plen - 2], payload[plen - 1], arr[2], arr[3]];
+                // [-3a, -2a, -1a, 3b]
+                let one_new = [payload[plen - 3], payload[plen - 2], payload[plen - 1], arr[3]];
+                let iter = match &arr {
+                    _ if arr == one_new => 1,
+                    _ if arr == two_new => 2,
+                    _ if arr == thr_new => 3,
+                    _ => 4,
+                };
+                self.data.extend_from_slice(&arr[arr.len()-iter..]);
+                payload.extend_from_slice(&arr[arr.len()-iter..]);
+                iter
             }
         };
 
@@ -178,6 +210,44 @@ fn main() {
     indices.push(collections.add_sequence(HashItem::Uv__([4., 4.])));
     */
 
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5,-0.5,-0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5,-0.5,0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5,0.5,0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5,-0.5,-0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5,0.5,0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5,0.5,-0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5,0.5,-0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5,0.5,0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5,0.5,0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5,0.5,-0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5,0.5,0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5,0.5,-0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5,0.5,-0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5,0.5,0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5,-0.5,0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5,0.5,-0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5,-0.5,0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5,-0.5,-0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5,-0.5,-0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5,-0.5,0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5,-0.5,0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5,-0.5,-0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5,-0.5,0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5,-0.5,-0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5,0.5,-0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5,0.5,-0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5,-0.5,-0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5,0.5,-0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5,-0.5,-0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5,-0.5,-0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5,0.5,0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5,0.5,0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5,-0.5,0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5,0.5,0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5,-0.5,0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5,-0.5,0.5])));
+
+    /*
     use rand::prelude::*;
 
     let mut rng = rand::thread_rng();
@@ -185,26 +255,27 @@ fn main() {
         let hash_type: u8 = rng.gen_range(0..3);
         match hash_type {
             0 => {
-                let f1: u8 = rng.gen();
-                let f2: u8 = f1;
+                let f1: f32 = rng.gen();
+                let f2: f32 = rng.gen();
                 indices.push(collections.add_sequence(HashItem::Uv__([f1 as f32, f2 as f32])));
             },
             1 => {
-                let f1: u8 = rng.gen();
-                let f2: u8 = f1;
-                let f3: u8 = rng.gen();
+                let f1: f32 = rng.gen();
+                let f2: f32 = rng.gen();
+                let f3: f32 = rng.gen();
                 indices.push(collections.add_sequence(HashItem::Vert([f1 as f32, f2 as f32, f3 as f32])));
             },
             2 => {
-                let f1: u8 = rng.gen();
-                let f2: u8 = f1;
-                let f3: u8 = rng.gen();
-                let f4: u8 = f3;
+                let f1: f32 = rng.gen();
+                let f2: f32 = rng.gen();
+                let f3: f32 = rng.gen();
+                let f4: f32 = rng.gen();
                 indices.push(collections.add_sequence(HashItem::Quat([f1 as f32, f2 as f32, f3 as f32, f4 as f32])));
             },
             _ => panic!("bad hash type")
         }
     }
+    */
 
     eprintln!("===================");
     collections.print_data();
