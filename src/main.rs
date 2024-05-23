@@ -107,8 +107,8 @@ impl HashCollections {
                     _ if arr == one_new => 1,
                     _ => 2,
                 };
-                self.data.extend_from_slice(&arr[arr.len()-iter..]);
-                payload.extend_from_slice(&arr[arr.len()-iter..]);
+                self.data.extend_from_slice(&arr[arr.len() - iter..]);
+                payload.extend_from_slice(&arr[arr.len() - iter..]);
                 iter
             }
             HashItem::Vert(arr) => {
@@ -122,8 +122,8 @@ impl HashCollections {
                     _ if arr == two_new => 2,
                     _ => 3,
                 };
-                self.data.extend_from_slice(&arr[arr.len()-iter..]);
-                payload.extend_from_slice(&arr[arr.len()-iter..]);
+                self.data.extend_from_slice(&arr[arr.len() - iter..]);
+                payload.extend_from_slice(&arr[arr.len() - iter..]);
                 iter
             }
             HashItem::Quat(arr) => {
@@ -133,20 +133,27 @@ impl HashCollections {
                 // [-2a, -1a, 2b, 3b]
                 let two_new = [payload[plen - 2], payload[plen - 1], arr[2], arr[3]];
                 // [-3a, -2a, -1a, 3b]
-                let one_new = [payload[plen - 3], payload[plen - 2], payload[plen - 1], arr[3]];
+                let one_new = [
+                    payload[plen - 3],
+                    payload[plen - 2],
+                    payload[plen - 1],
+                    arr[3],
+                ];
                 let iter = match &arr {
                     _ if arr == one_new => 1,
                     _ if arr == two_new => 2,
                     _ if arr == thr_new => 3,
                     _ => 4,
                 };
-                self.data.extend_from_slice(&arr[arr.len()-iter..]);
-                payload.extend_from_slice(&arr[arr.len()-iter..]);
+                self.data.extend_from_slice(&arr[arr.len() - iter..]);
+                payload.extend_from_slice(&arr[arr.len() - iter..]);
                 iter
             }
         };
 
         let plen = payload.len();
+        let dlen = self.data.len();
+
         for i in 0..iterations {
             let tmp_quat = HashItem::Quat([
                 payload[plen - i - 4],
@@ -155,7 +162,7 @@ impl HashCollections {
                 payload[plen - i - 1],
             ]);
             if self.map.get(&tmp_quat).is_none() {
-                self.map.insert(tmp_quat, self.data.len() - i - 4);
+                self.map.insert(tmp_quat, dlen - i - 4);
             }
             let tmp_vert = HashItem::Vert([
                 payload[plen - i - 3],
@@ -163,18 +170,22 @@ impl HashCollections {
                 payload[plen - i - 1],
             ]);
             if self.map.get(&tmp_vert).is_none() {
-                self.map.insert(tmp_vert, self.data.len() - i - 3);
+                self.map.insert(tmp_vert, dlen - i - 3);
             }
             let tmp_uv__ = HashItem::Uv__([payload[plen - i - 2], payload[plen - i - 1]]);
             if self.map.get(&tmp_uv__).is_none() {
-                self.map.insert(tmp_uv__, self.data.len() - i - 2);
+                self.map.insert(tmp_uv__, dlen - i - 2);
             }
         }
 
-        match sequence {
-            HashItem::Uv__(_) => IndexType::Uv__(len),
-            HashItem::Vert(_) => IndexType::Vert(len),
-            HashItem::Quat(_) => IndexType::Quat(len),
+        if let Some(&index) = self.map.get(&sequence) {
+            match sequence {
+                HashItem::Uv__(_) => IndexType::Uv__(index),
+                HashItem::Vert(_) => IndexType::Vert(index),
+                HashItem::Quat(_) => IndexType::Quat(index),
+            }
+        } else {
+            panic!("couldn't find last inserted index");
         }
     }
 
@@ -191,11 +202,11 @@ fn main() {
     let mut collections = HashCollections::new();
 
     let mut indices = vec![];
+    /*
     let quat = [1.0, 2.0, 3.0, 4.0];
     let vert = [1.0, 2.0, 3.0];
     let uv = [2.0, 3.0];
 
-    /*
     indices.push(collections.add_sequence(HashItem::Quat(quat)));
     indices.push(collections.add_sequence(HashItem::Vert(vert)));
     indices.push(collections.add_sequence(HashItem::Uv__(uv)));
@@ -210,42 +221,331 @@ fn main() {
     indices.push(collections.add_sequence(HashItem::Uv__([4., 4.])));
     */
 
-    indices.push(collections.add_sequence(HashItem::Vert([-0.5,-0.5,-0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([-0.5,-0.5,0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([-0.5,0.5,0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([-0.5,-0.5,-0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([-0.5,0.5,0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([-0.5,0.5,-0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([-0.5,0.5,-0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([-0.5,0.5,0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([0.5,0.5,0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([-0.5,0.5,-0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([0.5,0.5,0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([0.5,0.5,-0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([0.5,0.5,-0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([0.5,0.5,0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([0.5,-0.5,0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([0.5,0.5,-0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([0.5,-0.5,0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([0.5,-0.5,-0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([0.5,-0.5,-0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([0.5,-0.5,0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([-0.5,-0.5,0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([0.5,-0.5,-0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([-0.5,-0.5,0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([-0.5,-0.5,-0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([-0.5,0.5,-0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([0.5,0.5,-0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([0.5,-0.5,-0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([-0.5,0.5,-0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([0.5,-0.5,-0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([-0.5,-0.5,-0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([0.5,0.5,0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([-0.5,0.5,0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([-0.5,-0.5,0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([0.5,0.5,0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([-0.5,-0.5,0.5])));
-    indices.push(collections.add_sequence(HashItem::Vert([0.5,-0.5,0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([-0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Vert([0.5, -0.5, 0.5])));
+
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, -0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, 0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, -0.5, 0.5])));
+    indices.push(collections.add_sequence(HashItem::Quat([-0.5, -0.5, 0.5, 0.5])));
 
     /*
     use rand::prelude::*;
@@ -255,9 +555,9 @@ fn main() {
         let hash_type: u8 = rng.gen_range(0..3);
         match hash_type {
             0 => {
-                let f1: f32 = rng.gen();
+                let f1: f32 = rng.gen();c
                 let f2: f32 = rng.gen();
-                indices.push(collections.add_sequence(HashItem::Uv__([f1 as f32, f2 as f32])));
+                indices.push(collections.add_sequence(HashItem::Uv__([f1 as f32, f2 as f32])));)));
             },
             1 => {
                 let f1: f32 = rng.gen();
@@ -277,7 +577,7 @@ fn main() {
     }
     */
 
-    eprintln!("===================");
-    collections.print_data();
-    eprintln!("indices[{}]: {:?}", indices.len(), indices);
+    // eprintln!("===================");
+    // collections.print_data();
+    // eprintln!("indices[{}]: {:?}", indices.len(), indices);
 }
